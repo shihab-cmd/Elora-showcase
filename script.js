@@ -18,7 +18,9 @@ let view = 'hero';
 let prevView = 'hero';
 let current = null;
 let selection = { size: null, color: null };
-let cart = 0;
+let cart = [];
+let uid = 0;
+let section = 'home';
 let locked = false;
 
 /* ---------- Render cards ---------- */
@@ -44,8 +46,7 @@ function setView(next, product) {
     c.classList.toggle('is-selected', next === 'detail' && +c.dataset.id === product?.id));
   wrap.className = `view-${next}`;
   view = next;
-  document.querySelectorAll('[data-nav]').forEach((a) =>
-    a.classList.toggle('active', (a.dataset.nav === 'home' && next === 'hero') || (a.dataset.nav === 'product' && next === 'grid')));
+  updateActive();
 }
 
 function go(next) {
@@ -108,16 +109,93 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-$('#btn-cart').addEventListener('click', () => {
-  if (!current) return;
-  cart += 1;
-  const badge = $('#cart-count');
-  badge.textContent = cart;
+/* ---------- Cart drawer ---------- */
+const drawer = $('#cart-drawer');
+const overlay = $('#cart-overlay');
+const cartBtn = $('#cart-btn');
+const cartList = $('#cart-items');
+const cartEmpty = $('#cart-empty');
+const cartTotal = $('#cart-total');
+const checkoutBtn = $('#cart-checkout');
+const badge = $('#cart-count');
+
+function openCart() {
+  drawer.classList.add('active');
+  overlay.classList.add('active');
+  drawer.setAttribute('aria-hidden', 'false');
+  cartBtn.setAttribute('aria-expanded', 'true');
+  document.body.classList.add('cart-open');
+  $('#cart-close').focus({ preventScroll: true });
+}
+
+function closeCart() {
+  drawer.classList.remove('active');
+  overlay.classList.remove('active');
+  drawer.setAttribute('aria-hidden', 'true');
+  cartBtn.setAttribute('aria-expanded', 'false');
+  document.body.classList.remove('cart-open');
+  cartBtn.focus({ preventScroll: true });
+}
+
+function updateCart() {
+  badge.textContent = cart.length;
+  badge.classList.toggle('empty', cart.length === 0);
+  cartEmpty.hidden = cart.length > 0;
+  checkoutBtn.disabled = cart.length === 0;
+  cartTotal.textContent = `$${cart.reduce((sum, i) => sum + i.price, 0).toFixed(2)}`;
+}
+
+function addToCart(p, sel) {
+  const item = { uid: ++uid, name: p.name, price: p.price, image: p.imageUrl, size: sel.size, color: sel.color };
+  cart.push(item);
+
+  const row = document.createElement('li');
+  row.className = 'cart-item';
+  row.dataset.uid = item.uid;
+  row.innerHTML = `
+    <img src="${item.image}" alt="" onerror="this.style.visibility='hidden'">
+    <div>
+      <p class="ci-name">${item.name}</p>
+      <p class="ci-meta">Size ${item.size} <span class="ci-dot" style="--c:${item.color}"></span></p>
+      <p class="ci-price">$${item.price.toFixed(2)}</p>
+    </div>
+    <button class="ci-remove" aria-label="Remove ${item.name}">&times;</button>`;
+  cartList.appendChild(row);
+
+  updateCart();
   badge.classList.remove('bump');
   void badge.offsetWidth;
   badge.classList.add('bump');
-  toast(`Added ${current.name} (${selection.size}) to cart`);
+  toast(`Added ${item.name} (${item.size}) to cart`);
+}
+
+cartBtn.addEventListener('click', openCart);
+$('#cart-close').addEventListener('click', closeCart);
+overlay.addEventListener('click', closeCart);
+
+cartList.addEventListener('click', (e) => {
+  const btn = e.target.closest('.ci-remove');
+  if (!btn) return;
+  const row = btn.closest('.cart-item');
+  cart = cart.filter((i) => i.uid !== +row.dataset.uid);
+  row.classList.add('leaving');
+  setTimeout(() => row.remove(), 300);
+  updateCart();
 });
+
+checkoutBtn.addEventListener('click', () => {
+  const n = cart.length;
+  toast(`Order placed: ${n} item${n > 1 ? 's' : ''}, ${cartTotal.textContent}`);
+  cart = [];
+  cartList.innerHTML = '';
+  updateCart();
+  closeCart();
+});
+
+$('#btn-cart').addEventListener('click', () => {
+  if (current) addToCart(current, selection);
+});
+updateCart();
 
 $('#btn-order').addEventListener('click', () => {
   if (!current) return;
@@ -139,31 +217,52 @@ deck.addEventListener('keydown', (e) => {
 
 $('#back').addEventListener('click', () => setView(prevView));
 $('#see-all').addEventListener('click', () => go('grid'));
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && view === 'detail') setView(prevView); });
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (drawer.classList.contains('active')) closeCart();
+  else if (view === 'detail') setView(prevView);
+});
 
+/* ---------- Navbar & page sections ---------- */
+// The href anchors + CSS scroll-behavior handle the smooth jump; this only syncs the showcase view.
 document.querySelectorAll('[data-nav]').forEach((a) =>
-  a.addEventListener('click', (e) => {
-    e.preventDefault();
-    const n = a.dataset.nav;
-    if (n === 'home') setView('hero');
-    else if (n === 'product') setView('grid');
-    else toast('This page is not part of the demo');
+  a.addEventListener('click', () => {
+    if (a.dataset.nav === 'home') setView('hero');
+    if (a.dataset.nav === 'product') setView('grid');
   }));
 
-// Scroll: down in hero opens the grid, up in the grid returns to the hero
-wrap.addEventListener('wheel', (e) => {
-  if (locked || view === 'detail' || Math.abs(e.deltaY) < 20) return;
-  if (view === 'hero' && e.deltaY > 0) go('grid');
-  else if (view === 'grid' && e.deltaY < 0) go('hero');
-}, { passive: true });
+function updateActive() {
+  const key = section === 'home' ? (view === 'grid' ? 'product' : 'home') : section;
+  document.querySelectorAll('.links a').forEach((a) => a.classList.toggle('active', a.dataset.nav === key));
+}
 
-// Touch swipe equivalent
-let touchY = null;
-wrap.addEventListener('touchstart', (e) => (touchY = e.touches[0].clientY), { passive: true });
-wrap.addEventListener('touchend', (e) => {
-  if (touchY === null || view === 'detail') return;
-  const dy = touchY - e.changedTouches[0].clientY;
-  if (view === 'hero' && dy > 50) go('grid');
-  else if (view === 'grid' && dy < -50) go('hero');
-  touchY = null;
-}, { passive: true });
+// Highlight the link of the section crossing the middle of the viewport
+const io = new IntersectionObserver((entries) => {
+  entries.forEach((en) => {
+    if (en.isIntersecting) { section = en.target.id; updateActive(); }
+  });
+}, { rootMargin: '-45% 0px -45% 0px' });
+document.querySelectorAll('#home, #about, #contact').forEach((s) => io.observe(s));
+
+// Glass background on the nav once the page scrolls
+const nav = $('#nav');
+const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 24);
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+// At the top of the page, wheel down opens the grid and wheel up returns to the hero.
+// Past that, the page scrolls normally to About and Contact.
+window.addEventListener('wheel', (e) => {
+  if (view === 'detail' || window.scrollY > 8 || drawer.classList.contains('active')) return;
+  if (locked) { e.preventDefault(); return; } // swallow trackpad inertia
+  if (Math.abs(e.deltaY) < 20) return;
+  if (view === 'hero' && e.deltaY > 0) { e.preventDefault(); go('grid'); }
+  else if (view === 'grid' && e.deltaY < 0) { e.preventDefault(); go('hero'); }
+}, { passive: false });
+
+/* ---------- Contact form ---------- */
+$('#contact-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  e.target.reset();
+  toast('Message sent. We reply within two working days.');
+});
