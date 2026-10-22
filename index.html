@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fashion. | The Ultimate Collections</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app-wrapper" class="view-hero">
+    <div class="device">
+      <header class="nav">
+        <a class="logo" href="#" data-nav="home">Fashion.</a>
+        <ul class="links">
+          <li><a href="#" data-nav="home" class="active">Home</a></li>
+          <li><a href="#" data-nav="product">Product</a></li>
+          <li><a href="#" data-nav="about">About Us</a></li>
+          <li><a href="#" data-nav="contact">Contact</a></li>
+        </ul>
+        <div class="icons">
+          <button class="icon-btn" aria-label="Account">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="10" r="3.2"/><path d="M5.8 18.6c1.5-2.6 3.6-3.6 6.2-3.6s4.7 1 6.2 3.6"/></svg>
+          </button>
+          <button class="icon-btn cart" aria-label="Cart">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>
+            <span class="badge" id="cart-count">0</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="stage">
+        <section class="left">
+          <div class="headings">
+            <h1 class="h h-hero"><span>The Ultimate</span><strong>COLLECTIONS</strong></h1>
+            <h1 class="h h-grid"><span>Best Selling Product Of The</span><strong>Collection</strong></h1>
+          </div>
+          <div class="deck" id="deck"></div>
+          <button class="see-all" id="see-all">See All Product</button>
+        </section>
+
+        <aside class="detail" id="detail" aria-live="polite">
+          <div class="detail-inner">
+            <button class="back d-item" id="back" style="--i:0">&larr; Back</button>
+            <h2 class="d-name d-item" id="d-name" style="--i:1"></h2>
+            <p class="d-price d-item" id="d-price" style="--i:2"></p>
+            <p class="d-desc d-item" id="d-desc" style="--i:3"></p>
+            <div class="d-item" style="--i:4">
+              <p class="label">Select size (US)</p>
+              <div class="sizes" id="d-sizes"></div>
+            </div>
+            <div class="d-item" style="--i:5">
+              <p class="label">Select color</p>
+              <div class="swatches" id="d-colors"></div>
+            </div>
+            <div class="actions d-item" style="--i:6">
+              <button class="btn primary" id="btn-order">Order now</button>
+              <button class="btn ghost" id="btn-cart">Add to cart</button>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
