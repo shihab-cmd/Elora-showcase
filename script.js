@@ -253,7 +253,20 @@ updateCart();
 
 $('#btn-order').addEventListener('click', () => {
   if (!current) return;
-  toast(`Order placed: ${current.name}, size ${selection.size}`);
+
+  const phone = '8801611437458';
+
+  const message = `Hi! I want to order:
+
+*Product:* ${current.name}
+*Price:* $${current.price}
+*Size:* ${selection.size}
+*Color:* ${selection.color}
+
+Please confirm availability. Thank you!`;
+
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  window.open(url, '_blank');
 });
 
 /* ---------- Events ---------- */
